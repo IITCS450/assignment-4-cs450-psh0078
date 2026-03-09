@@ -47,6 +47,20 @@ trap(struct trapframe *tf)
   }
 
   switch(tf->trapno){
+  case T_PGFLT:
+    uint faultva = rcr2();
+    if(myproc() == 0 || (tf->cs & 3) == 0){
+      cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n",
+        tf->trapno, cpuid(), tf->eip, faultva);
+      panic("trap");
+    }
+    cprintf("pid %d %s: page fault va 0x%x eip 0x%x\n",
+      myproc()->pid, myproc()->name, faultva, tf->eip);
+    if(faultva < PGSIZE)
+      cprintf("pid %d %s: likely NULL dereference (va < PGSIZE)\n",
+        myproc()->pid, myproc()->name);
+    myproc()->killed = 1;
+    break;
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
       acquire(&tickslock);
