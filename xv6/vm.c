@@ -386,6 +386,46 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
+int
+mprotectuvm(pde_t *pgdir, uint addr, int len)
+{
+  pte_t *pte;
+  uint i, va;
+
+  for(i = 0; i < (uint)len; i++){
+    va = addr + i * PGSIZE;
+    if(va < addr)
+      return -1;
+    pte = walkpgdir(pgdir, (char*)va, 0);
+    if(pte == 0 || (*pte & (PTE_P|PTE_U)) != (PTE_P|PTE_U))
+      return -1;
+    *pte &= ~PTE_W;
+  }
+
+  lcr3(V2P(pgdir));
+  return 0;
+}
+
+int
+munprotectuvm(pde_t *pgdir, uint addr, int len)
+{
+  pte_t *pte;
+  uint i, va;
+
+  for(i = 0; i < (uint)len; i++){
+    va = addr + i * PGSIZE;
+    if(va < addr)
+      return -1;
+    pte = walkpgdir(pgdir, (char*)va, 0);
+    if(pte == 0 || (*pte & (PTE_P|PTE_U)) != (PTE_P|PTE_U))
+      return -1;
+    *pte |= PTE_W;
+  }
+
+  lcr3(V2P(pgdir));
+  return 0;
+}
+
 //PAGEBREAK!
 // Blank page.
 //PAGEBREAK!

@@ -89,3 +89,49 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int
+sys_mprotect(void)
+{
+  int addr;
+  int len;
+  uint nbytes;
+  uint end;
+  struct proc *p;
+
+  if(argint(0, &addr) < 0 || argint(1, &len) < 0)
+    return -1;
+  if(len <= 0 || (uint)addr % PGSIZE != 0)
+    return -1;
+  nbytes = (uint)len * PGSIZE;
+  if(nbytes / PGSIZE != (uint)len)
+    return -1;
+  end = (uint)addr + nbytes;
+  p = myproc();
+  if((uint)addr < PGSIZE || end < (uint)addr || end > p->sz)
+    return -1;
+  return mprotectuvm(p->pgdir, (uint)addr, len);
+}
+
+int
+sys_munprotect(void)
+{
+  int addr;
+  int len;
+  uint nbytes;
+  uint end;
+  struct proc *p;
+
+  if(argint(0, &addr) < 0 || argint(1, &len) < 0)
+    return -1;
+  if(len <= 0 || (uint)addr % PGSIZE != 0)
+    return -1;
+  nbytes = (uint)len * PGSIZE;
+  if(nbytes / PGSIZE != (uint)len)
+    return -1;
+  end = (uint)addr + nbytes;
+  p = myproc();
+  if((uint)addr < PGSIZE || end < (uint)addr || end > p->sz)
+    return -1;
+  return munprotectuvm(p->pgdir, (uint)addr, len);
+}
